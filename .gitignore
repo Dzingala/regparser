@@ -1,0 +1,19 @@
+.idea/
+
+*.iml
+
+*.iws
+
+
+# Maven ingorance
+
+log/
+target/
+*/logs/
+out/
+
+# Eclipse ignorance
+
+*.project
+*.classpath
+*.settings
