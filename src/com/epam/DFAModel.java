@@ -43,17 +43,12 @@ public class DFAModel implements DFA{
     }
 
     boolean checkInputRegex(String input){
-        boolean isInAlphabet = false;
         for(int i=0;i<input.length();i++){
-            char currentChar = input.charAt(i);
-            for(int j=0;j<alphabet.length();j++){
-                if(alphabet.charAt(j)==currentChar){
-                    isInAlphabet=true;
-                    break;
-                }
+            if(alphabet.indexOf(input.charAt(i))<0){
+                return false;
             }
         }
-        return isInAlphabet;
+        return true;
     }
 
     @Override
