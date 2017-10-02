@@ -1,45 +1,130 @@
 package com.epam;
 
-import com.epam.DFAImpl.States;
+import jdk.nashorn.internal.runtime.regexp.joni.Regex;
 
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Created by Ivan_Dzinhala on 9/26/2017.
  */
 public class DFAModel implements DFA{
-
-    private String alphabet="abcdefghijklmnopqrstuvwxyz()|*+";
-
-    private HashMap<Character,TreeMap<States,States>> transitionTable;
-    DFAModel(){
-        transitionTable = new HashMap<>();
-        TreeMap<States, States> statesFromTo = new TreeMap<>();
-        for(int i = 0; i < alphabet.length(); i++){
-            alphabet.charAt(i);
-        }
+    public enum States{
+        STATE_INITIAL,
+        STATE_1,
+        STATE_2,
+        STATE_INCORRECT,
+        STATE_3,
+        STATE_ACCEPTANCE
     }
 
-    public void parseInputText(String input){
-        transitionTable = new HashMap<>();
-        for(int i = 0 ; i < input.length() ; i++){
+    private static String alphabet="abcdefghijklmnopqrstuvwxyz()|*+";
+
+    private static States currentState;
+
+    private int acceptanceState;
+    private Map<Character,HashMap<States,States>> transitionTable;
+
+    DFAModel(){
+        transitionTable = new TreeMap<>();
+        currentState=States.STATE_INITIAL;
+    }
+
+    public void fillInAutomata(String input){
+        for(int i = 0 ; i < input.length() ; i++) {
             Character currentChar = input.charAt(i);
 
-            if(currentChar =='('){
-                int j = i;
-                for(;currentChar!=')';j++){
-                    currentChar = input.charAt(j);
-                    if(j>input.length())throw new IllegalArgumentException("Wrong string input");
+            HashMap charStatesMap = new HashMap<States, States>();
+            boolean isIncorrectInput = false;
+
+            switch (currentState){
+                case STATE_INITIAL:{
+                    switch (currentChar){
+                        case '(': {
+                            currentState = States.STATE_1;
+                            charStatesMap.put(States.STATE_INITIAL, States.STATE_1);
+                            break;
+                        }
+                        default:{
+                            currentState = States.STATE_INCORRECT;
+                            isIncorrectInput=true;
+                        }
+                    }
+                    break;
                 }
-                processInsideBrackets(input.substring(i+1,j-1));
+                case STATE_1:{
+                    if((currentChar>='a' && currentChar<='z') || (currentChar>='A' && currentChar<='Z')){
+                        charStatesMap.put(States.STATE_1, States.STATE_1);
+                    }else if(currentChar=='|'){
+                        currentState = States.STATE_2;
+                        charStatesMap.put(States.STATE_1, States.STATE_2);
+                    }else{
+                        currentState = States.STATE_INCORRECT;
+                        isIncorrectInput=true;
+                    }
+                    break;
+                }
+                case STATE_2:{
+                    if((currentChar>='a' && currentChar<='z') || (currentChar>='A' && currentChar<='Z')){
+                        charStatesMap.put(States.STATE_2, States.STATE_2);
+                    }else if(currentChar==')'){
+                        currentState = States.STATE_3;
+                        charStatesMap.put(States.STATE_2, States.STATE_3);
+                    }else{
+                        currentState = States.STATE_INCORRECT;
+                        isIncorrectInput=true;
+                    }
+                    break;
+                }case STATE_3:{
+                    if(currentChar=='+'){
+                        currentState = States.STATE_ACCEPTANCE;
+                        charStatesMap.put(States.STATE_3, States.STATE_ACCEPTANCE);
+                    }else{
+                        currentState=States.STATE_INCORRECT;
+                        isIncorrectInput=true;
+                    }
+                    break;
+                }
             }
+
+            if(isIncorrectInput){
+                throw new UnsupportedOperationException("INCORRECT INPUT");
+            }
+
+            transitionTable.put(currentChar, charStatesMap);
         }
+        System.out.println("resulting state:" + currentState);
     }
 
-    private void processInsideBrackets(String substring) {
 
+    public void checkInputMatchesRegex(String input) {
+        Integer inputState = 0;
+        for(int i=0;i<input.length();i++){
+            Character currentCharacter = input.charAt(i);
+            //HashMap<Integer, Integer> charStates = transitionTable.get(currentCharacter);
+            //inputState = charStates.get(inputState);
+            if(null==inputState){
+                throw new UnsupportedOperationException("Input string does not fit regex");
+            }
+        }
+
+    }
+    private void processInsideBrackets(String substring, boolean isEnd) {
+        System.out.println("processing string: "+substring);
+        if(substring.length()<=2){
+            return;
+        }
+
+        for(int i=0;i<substring.length();i++){
+
+            Character currentChar = substring.charAt(i);
+            System.out.println("Processing symbol: "+currentChar);
+            //transitionTable.put(substring.charAt(0),statesMap);
+        }
     }
 
     boolean checkInputRegex(String input){
@@ -53,48 +138,20 @@ public class DFAModel implements DFA{
 
     @Override
     public boolean isCorrectString(String input){
-        States currentState = States.STATE_INITIAL;
-        for (int i=0;i<input.length();i++){
-            char currentChar = input.charAt(i);
-            currentState = move(currentState, currentChar);
-            if(currentState==States.STATE_ACCEPTANCE){
-                return true;
-            }
-        }
+//        States currentState = States.STATE_INITIAL;
+//        for (int i=0;i<input.length();i++){
+//            char currentChar = input.charAt(i);
+//            currentState = move(currentState, currentChar);
+//            if(currentState==States.STATE_ACCEPTANCE){
+//                return true;
+//            }
+//        }
         return false;
     }
 
-    private States move(States state, final char currentChar) {
-        switch(state){
-            case STATE_INITIAL:{
-                switch (currentChar){
-                    case 'a':
-                        return States.STATE_A;
-                    case 'c':
-                        return States.STATE_C;
-                    default:
-                        return States.STATE_INITIAL;
-                }
-            }
-            case STATE_A:{
-                switch(currentChar){
-                    case 'b':
-                        return States.STATE_ACCEPTANCE;
-                    default:
-                        return States.STATE_INITIAL;
-                }
-            }
-            case STATE_C:{
-                switch(currentChar){
-                    case 'd':
-                        return States.STATE_ACCEPTANCE;
-                    default:
-                        return States.STATE_INITIAL;
-                }
-            }
+    private String move(String currentState, final char currentChar) {
 
-        }
-        return state;
+        return "d";
     }
 
 
